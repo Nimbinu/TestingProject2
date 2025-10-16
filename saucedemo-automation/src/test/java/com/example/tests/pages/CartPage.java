@@ -1,8 +1,9 @@
-// src/test/java/com/example/tests/pages/CartPage.java
 package com.example.tests.pages;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -11,24 +12,36 @@ public class CartPage {
     private WebDriverWait wait;
 
     private By checkoutBtn = By.id("checkout");
-    private By cartItems = By.className("cart_item"); // optional if you want to count items
+    private By cartItems = By.className("cart_item");
 
     public CartPage(WebDriver driver, WebDriverWait wait){
         this.driver = driver;
         this.wait = wait;
     }
 
-    // New method: check if cart page loaded
     public boolean isCartLoaded(){
         return wait.until(ExpectedConditions.visibilityOfElementLocated(checkoutBtn)).isDisplayed();
     }
 
-    // Existing method
+    /**
+     * Click checkout in a robust way:
+     *  - wait until clickable
+     *  - scroll into view
+     *  - try normal click, if it fails use JS click
+     */
     public void clickCheckout(){
-        wait.until(ExpectedConditions.elementToBeClickable(checkoutBtn)).click();
+        WebElement btn = wait.until(ExpectedConditions.visibilityOfElementLocated(checkoutBtn));
+        try {
+            wait.until(ExpectedConditions.elementToBeClickable(checkoutBtn));
+            // scroll into view first
+            ((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", btn);
+            btn.click();
+        } catch (Exception e) {
+            // fallback to JS click
+            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", btn);
+        }
     }
 
-    // Optional: count items in the cart
     public int countCartItems(){
         return driver.findElements(cartItems).size();
     }
